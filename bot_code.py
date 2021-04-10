@@ -1,14 +1,18 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 
+import os
+import sys
 import discord
 import random
 from configparser import ConfigParser
 import mysql.connector
 
+
 config = ConfigParser()
-config.read("config.ini")
+config.read(os.path.abspath(sys.argv[0]+"/../config.ini"))
 
 client = discord.Client()
+
 
 simposiumdb = mysql.connector.connect (
         host = config['mysql']['host'],
@@ -28,6 +32,10 @@ message_responses = {
         "jzs": "Ano?",
         "omg": "Ano?",
         "OMG": "Ano?",
+        "Máme radost?": "...",
+        "Mame radost?": "...",
+        "Tak máme?": "Máme radost!",
+        "Tak mame?": "Máme radost!",
 }
 
 pupickovniny = [
