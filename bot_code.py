@@ -3,11 +3,21 @@
 import discord
 import random
 from configparser import ConfigParser
+import mysql.connector
 
 config = ConfigParser()
 config.read("config.ini")
 
 client = discord.Client()
+
+simposiumdb = mysql.connector.connect (
+        host = config['mysql']['host'],
+        user = config['mysql']['user'],
+        password = config['mysql']['password'],
+        database = config['mysql']['database']
+)
+
+dbcursor = simposiumdb.cursor()
 
 message_responses = {
         "jsem vtipnej": "ne nejsi...",
@@ -100,9 +110,13 @@ async def on_message(message):
             return
 
     for message_item in pupickovi_sloveni:
-        if message.content.startswith(message_item):
-            await message.channel.send("Pupíček: " + random.choice(pupickovniny))
-            return
+        if message_item in message.content:
+            sql = "SELECT hlaska FROM pupik_hlasky ORDER BY RAND() LIMIT 1"
+            dbcursor.execute(sql)
 
+            pupik_hlaska = dbcursor.fetchall()
+
+            await message.channel.send("Pupíček: " + pupik_hlaska[0][0])
+            return
 
 client.run(config['discord']['TOKEN'])
