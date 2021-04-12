@@ -112,6 +112,12 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    print("content "+ message.content)
+    print("author "+ message.author.name)
+    print("bot? "+ str(message.author.bot))
+    print("created at "+ str(message.created_at))
+    print("type "+ str(message.type)) # catch only default type
+
     for message_item in message_responses:
         if message_item in message.content:
             await message.channel.send(message_responses.get(message_item))
@@ -128,3 +134,6 @@ async def on_message(message):
             return
 
 client.run(config['discord']['TOKEN'])
+
+###
+
