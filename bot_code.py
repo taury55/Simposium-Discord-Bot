@@ -67,21 +67,19 @@ def pupik_filter(msg):
 
     # bot messages
     if (msg.author.bot):
-        return True
+        return [True, "bots msg"]
     
     text = msg.content
 
     # msg length
     if(len(text) < MSG_LOW_LEN or len(text) > MSG_HIGH_LEN):
-        print("wrong msg len: "+str(len(text)))
-        return True
+        return [True, "wrong msg len: "+str(len(text))]
 
     # words len
     words = text.split()
     for word in words:
         if len(word) > WORD_HIGH_LEN:
-            print("wrong word: '"+word+"' len: "+str(len(word)))
-            return True
+            return [True, "wrong word: '"+word+"' len: "+str(len(word))]
     # valid chars
     letters_arr = text.replace(" ", "").lower()
     counter = 0
@@ -89,15 +87,13 @@ def pupik_filter(msg):
         if ord(letter) > ord('z') or ord(letter) < ord('a'):
             counter += 1
     if counter > len(letters_arr):
-        print("many unsupported characters in msg: "+ letters_arr)
-        True
+        return [True, "many unsupported characters in msg: "+ letters_arr]
 
     # emoji
     if(":" in text):
-        print("emoji in msg. Msg: "+text)
-        return True
+        return [True,"emoji in msg. Msg: "+text]
 
-    return False
+    return [False, ""]
 
 @client.event
 async def on_ready():
@@ -108,13 +104,6 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-
-    #print("content "+ message.content)
-    #print("author "+ message.author.name)
-    #print("author id "+ str(message.author.id))
-    #print("bot? "+ str(message.author.bot))
-    #print("created at "+ str(message.created_at))
-    #print("type "+ str(message.type)) # catch only default type
 
     for message_item in message_responses:
         if message_item in message.content:
@@ -130,7 +119,7 @@ async def on_message(message):
 
             await message.channel.send("Pupíček: " + pupik_hlaska[0][0])
             return
-
+    
     if message.content.startswith(WAKEUP_CALL):
         channel = message.channel
         await channel.send("fetching...")
@@ -140,9 +129,18 @@ async def on_message(message):
         all_msgs = await channel.history(limit=200).flatten()
 
         for msg in all_msgs:
+            
+            #TODO msg.content use only content in commas
+            tmp_arr = msg.content.split('"')
+            if len(tmp_arr) == 1:
+                msg.content = tmp_arr[0]
+            elif len(tmp_arr) == 3:
+                msg.content = tmp_arr[1]
+                
+
             if WAKEUP_CALL in msg.content:
                 continue
-            elif pupik_filter(msg): #TODO: here add spam filter function
+            elif pupik_filter(msg)[0]:
                 print("SPAM: "+msg.content)
                 continue
             print("HAM: "+msg.content)
