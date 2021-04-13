@@ -57,8 +57,6 @@ WAKEUP_CALL = "!fetch_pupik"
 # true = spam
 def pupik_filter(msg):
     
-    #TODO remove test prints
-
     # constants
     MSG_LOW_LEN = 5
     MSG_HIGH_LEN = 50
@@ -95,6 +93,8 @@ def pupik_filter(msg):
 
     return [False, ""]
 
+
+
 @client.event
 async def on_ready():
     print("We have logged in is {0.user}".format(client))
@@ -128,6 +128,8 @@ async def on_message(message):
 
         all_msgs = await channel.history(limit=200).flatten()
 
+        spam_str_info = " "
+
         for msg in all_msgs:
             
             #TODO msg.content use only content in commas
@@ -141,11 +143,9 @@ async def on_message(message):
             if WAKEUP_CALL in msg.content:
                 continue
             elif pupik_filter(msg)[0]:
-                print("SPAM: "+msg.content)
+                #spam_str_info += "SPAM: "+ msg.content + "\t" + pupik_filter(msg)[1] + "\n"
                 continue
-            print("HAM: "+msg.content)
 
-            num_of_msg += 1
             member_id = msg.author.id
 
             sql = "SELECT id, member_id FROM users WHERE member_id = %s"
@@ -168,23 +168,29 @@ async def on_message(message):
 
                 simposiumdb.commit()
 
-                sql = "SELECT id, member_id FROM users WHERE member_id = %s"
-                val = (str(member_id), )
+            sql = "SELECT id FROM users WHERE member_id = %s"
+            val = (str(member_id), )
+            dbcursor.execute(sql, val)
+
+            user_id = dbcursor.fetchall()
+
+            sql = "SELECT hlaska FROM pupik_hlasky WHERE hlaska = %s"
+            val = (str(msg.content), )
+            dbcursor.execute(sql, val)
+
+            sql_results = dbcursor.fetchall()
+
+            if 0 == len(sql_results):
+                sql = "INSERT INTO pupik_hlasky (hlaska, date, author) VALUES (%s, %s, %s)"
+                val = (str(msg.content), str(msg.created_at), str(user_id[0][0]))
                 dbcursor.execute(sql, val)
 
-                sql_results = dbcursor.fetchall()
-
-            sql = "INSERT INTO pupik_hlasky (hlaska, date, author) VALUES (%s, %s, %s)"
-            val = (str(msg.content), str(msg.created_at), sql_results[0])
-            #dbcursor.execute(sql, val) #TODO: uncomment when spam filter done
-
-            simposiumdb.commit()
+                simposiumdb.commit()
+                num_of_msg += 1
 
 
-        await channel.send("Fetched {:d} new hlášek.".format(num_of_msg))
+        output_msg = ("Fetched {:d} new hlášek.\n{}".format(num_of_msg, spam_str_info))
+        await channel.send(output_msg)
         return
 
 client.run(config['discord']['TOKEN'])
-
-###
-
