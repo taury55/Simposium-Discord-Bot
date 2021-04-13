@@ -38,57 +38,6 @@ message_responses = {
         "Tak mame?": "Máme radost!",
 }
 
-pupickovniny = [
-        "Ten Urgot mě ultnul???",
-        "Ten Urgot má lvl 9?",
-        "Pupíčku, dáš si rohlíček?",
-        "Burp",
-        "JAMESSSS, JAMESSSS CARONNNNNNNN",
-        "Moje ultina nefunguje... vrrrrrnnnn vrrrrnnnn vhuuum",
-        "Ale Jirka Král je lepší.",
-        "HROOOOO!",
-        "TO PROČ V TÝ BUSHYYY???",
-        "To co tam dělaj to Qčka?",
-        "Pupajs?",
-        "WTF, Nechceš umřít?",
-        "Da faaaak?",
-        "JEBE TII???",
-        "Ježíš ona zase flashla, kolik ona má těch flashů?"
-        "Formule Pzke zasahuje... tudum tudum"
-        "Ona má zas tu ultinu. Ona má furtttttt!!!",
-        "NÉÉÉÉÉÉÉ NÉÉÉÉÉÉÉ HRO!",
-        "ne pls xd",
-        "xd",
-        "Ty seš fakt kvalitní champión!",
-        "Jak ho to minulo?!",
-        "JAK JSI TO ROZBIL?!?!?!",
-        "Už zase?!?!",
-        "Oni dohráli... HOVNO",
-        "eeeeeeeeeeeeeeee",
-        "Hlavně že máš pivo vole.",
-        "SVATBA KÁRY",
-        "Smrk Smmrrrrrrrrk",
-        "To je Čínskej prezident.",
-        "WHAAAAA THE FUUUCK!!!",
-        "Co spotíš VOLEEEE????",
-        "No jasně, že mě vidííím!!!",
-        "Prďolaaaa",
-        "Dělaš si kokota???",
-        "Kéž by.",
-        "Ahoooj, ahoj mastře?",
-        "Ty seš fakt kvalitní champion kamaráde.",
-        "Kam až to letí to tvoje Q.",
-        "Ten 'pro play'",
-        "Kurwa, zrovna top tier a já mám ping 500 vole.",
-        "Já mám dělo z číííííínyyyyy!!!!",
-        "NO TAK TY VOLEEEEEEE.",
-        "Co to je za bullshit ten champ kámo prostě.",
-        "Ohh, ano ty jsi tak dobrá ty píčo.",
-        "Achhhhhhhhhh, co to je za damage.",
-        "Dáš si oříšek?",
-        "Yoooou, what's up my man?",
-]
-
 pupickovi_sloveni = [
         "Pupíčku",
         "pupíčku",
@@ -102,7 +51,52 @@ pupickovi_sloveni = [
         "pupajs",
 ]
 
-def pupik_filter(message):
+# CONSTANTS and MACROS
+WAKEUP_CALL = "!fetch_pupik"
+
+# true = spam
+def pupik_filter(msg):
+    
+    #TODO remove test prints
+
+    # constants
+    MSG_LOW_LEN = 5
+    MSG_HIGH_LEN = 50
+    WORD_HIGH_LEN = 25
+
+
+    # bot messages
+    if (msg.author.bot):
+        return True
+    
+    text = msg.content
+
+    # msg length
+    if(len(text) < MSG_LOW_LEN or len(text) > MSG_HIGH_LEN):
+        print("wrong msg len: "+str(len(text)))
+        return True
+
+    # words len
+    words = text.split()
+    for word in words:
+        if len(word) > WORD_HIGH_LEN:
+            print("wrong word: '"+word+"' len: "+str(len(word)))
+            return True
+    # valid chars
+    letters_arr = text.replace(" ", "").lower()
+    counter = 0
+    for letter in letters_arr:
+        if ord(letter) > ord('z') or ord(letter) < ord('a'):
+            counter += 1
+    if counter > len(letters_arr):
+        print("many unsupported characters in msg: "+ letters_arr)
+        True
+
+    # emoji
+    if(":" in text):
+        print("emoji in msg. Msg: "+text)
+        return True
+
     return False
 
 @client.event
@@ -137,7 +131,7 @@ async def on_message(message):
             await message.channel.send("Pupíček: " + pupik_hlaska[0][0])
             return
 
-    if message.content.startswith("!fetch_pupik"):
+    if message.content.startswith(WAKEUP_CALL):
         channel = message.channel
         await channel.send("fetching...")
 
@@ -146,8 +140,12 @@ async def on_message(message):
         all_msgs = await channel.history(limit=200).flatten()
 
         for msg in all_msgs:
-            if pupik_filter(msg): #TODO: here add spam filter function
+            if WAKEUP_CALL in msg.content:
                 continue
+            elif pupik_filter(msg): #TODO: here add spam filter function
+                print("SPAM: "+msg.content)
+                continue
+            print("HAM: "+msg.content)
 
             num_of_msg += 1
             member_id = msg.author.id
