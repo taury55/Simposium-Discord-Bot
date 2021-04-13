@@ -152,7 +152,7 @@ async def on_message(message):
             num_of_msg += 1
             member_id = msg.author.id
 
-            sql = "SELECT member_id FROM users WHERE member_id = %s"
+            sql = "SELECT id, member_id FROM users WHERE member_id = %s"
             val = (str(member_id), )
             dbcursor.execute(sql, val)
 
@@ -172,8 +172,14 @@ async def on_message(message):
 
                 simposiumdb.commit()
 
-            sql = "INSERT INTO pupik_hlasky (hlaska, date, author_id) VALUES (%s, %s, %s)"
-            val = (str(msg.content), str(msg.created_at), str(member_id))
+                sql = "SELECT id, member_id FROM users WHERE member_id = %s"
+                val = (str(member_id), )
+                dbcursor.execute(sql, val)
+
+                sql_results = dbcursor.fetchall()
+
+            sql = "INSERT INTO pupik_hlasky (hlaska, date, author) VALUES (%s, %s, %s)"
+            val = (str(msg.content), str(msg.created_at), sql_results[0])
             #dbcursor.execute(sql, val) #TODO: uncomment when spam filter done
 
             simposiumdb.commit()
