@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import sys
@@ -102,6 +102,9 @@ pupickovi_sloveni = [
         "pupajs",
 ]
 
+def pupik_filter(message):
+    return False
+
 @client.event
 async def on_ready():
     print("We have logged in is {0.user}".format(client))
@@ -112,11 +115,12 @@ async def on_message(message):
     if message.author == client.user:
         return
 
-    print("content "+ message.content)
-    print("author "+ message.author.name)
-    print("bot? "+ str(message.author.bot))
-    print("created at "+ str(message.created_at))
-    print("type "+ str(message.type)) # catch only default type
+    #print("content "+ message.content)
+    #print("author "+ message.author.name)
+    #print("author id "+ str(message.author.id))
+    #print("bot? "+ str(message.author.bot))
+    #print("created at "+ str(message.created_at))
+    #print("type "+ str(message.type)) # catch only default type
 
     for message_item in message_responses:
         if message_item in message.content:
@@ -132,6 +136,51 @@ async def on_message(message):
 
             await message.channel.send("Pupíček: " + pupik_hlaska[0][0])
             return
+
+    if message.content.startswith("!fetch_pupik"):
+        channel = message.channel
+        await channel.send("fetching...")
+
+        num_of_msg = 0
+
+        all_msgs = await channel.history(limit=200).flatten()
+
+        for msg in all_msgs:
+            if pupik_filter(msg): #TODO: here add spam filter function
+                continue
+
+            num_of_msg += 1
+            member_id = msg.author.id
+
+            sql = "SELECT member_id FROM users WHERE member_id = %s"
+            val = (str(member_id), )
+            dbcursor.execute(sql, val)
+
+            sql_results = dbcursor.fetchall()
+
+            if 0 == len(sql_results):
+                name = msg.author.name
+
+                if hasattr(msg.author, 'nick'):
+                    nick = msg.author.nick
+                else:
+                    nick = name
+
+                sql = "INSERT INTO users (name, nick, member_id) VALUES (%s, %s, %s)"
+                val = (str(name), str(nick), str(member_id))
+                dbcursor.execute(sql, val)
+
+                simposiumdb.commit()
+
+            sql = "INSERT INTO pupik_hlasky (hlaska, date, author_id) VALUES (%s, %s, %s)"
+            val = (str(msg.content), str(msg.created_at), str(member_id))
+            #dbcursor.execute(sql, val) #TODO: uncomment when spam filter done
+
+            simposiumdb.commit()
+
+
+        await channel.send("Fetched {:d} new hlášek.".format(num_of_msg))
+        return
 
 client.run(config['discord']['TOKEN'])
 
